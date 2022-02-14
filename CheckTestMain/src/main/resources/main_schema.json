@@ -1,0 +1,43 @@
+{
+  "fields": [{
+    "name": "tag_id",
+    "type": "NUMERIC",
+    "mode'": "NULLABLE"
+  },
+    {
+      "name": "asset_id",
+      "type": "NUMERIC",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "alarm",
+      "type": "BOOL",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "tag_name",
+      "type": "STRING",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "value",
+      "type": "NUMERIC",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "quality",
+      "type": "NUMERIC",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "payload_timestamp",
+      "type": "TIMESTAMP",
+      "mode": "NULLABLE"
+    },
+    {
+      "name": "created_timestamp",
+      "type": "TIMESTAMP",
+      "mode": "NULLABLE"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "fields": [{
+    "name": "payload",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  }, {
+    "name": "timestamp",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  }, {
+    "name": "reason",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  }]
+}
