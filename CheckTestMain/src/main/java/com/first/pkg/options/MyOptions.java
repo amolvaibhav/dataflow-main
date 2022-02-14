@@ -1,21 +1,40 @@
 package com.first.pkg.options;
 
-import org.apache.beam.sdk.options.Description;
-import org.apache.beam.sdk.options.PipelineOptions;
-import org.apache.beam.sdk.options.Validation;
-import org.apache.beam.sdk.options.ValueProvider;
+import org.apache.beam.sdk.options.*;
+import org.checkerframework.checker.initialization.qual.Initialized;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.UnknownKeyFor;
 
 public interface MyOptions extends PipelineOptions {
-    @Validation.Required
-    @Description("Gcs path to javascript udf source")
-    ValueProvider<String> getJavascriptTextTransformGcsPath();
-
-    void setJavascriptTextTransformGcsPath(ValueProvider<String> javascriptTextTransformGcsPath);
 
     @Validation.Required
-    @Description("UDF Javascript Function Name")
-    ValueProvider<String> getJavascriptTextTransformFunctionName();
+ValueProvider<String> getMainTable();
+void setMainTable(ValueProvider<String> mainTable);
 
-    void setJavascriptTextTransformFunctionName(
-            ValueProvider<String> javascriptTextTransformFunctionName);
+@Validation.Required
+ValueProvider<String> getInvalidTable();
+void setInvalidTable(ValueProvider<String> invalidTable);
+
+@Validation.Required
+ValueProvider<String> getInvalidSchemaTable();
+void setInvalidSchemaTable(ValueProvider<String> invalidSchemaTable);
+
+@Description("The full subscription Name")
+@Validation.Required
+ValueProvider<String> getFullSubName();
+void setFullSubName(ValueProvider<String> subName);
+
+    @Validation.Required
+    ValueProvider<String> getbqProject();
+    void setbqProject(ValueProvider<String> bqProject);
+
+
+    ValueProvider<String> getPubsubProject();
+    void setPubsubProject(ValueProvider<String> assetDataset);
+
+    @Description("Path of the file to write to")
+    @UnknownKeyFor @NonNull @Initialized
+    String getTempLocation();
+
+    void setTempLocation(String tempLocation);
 }

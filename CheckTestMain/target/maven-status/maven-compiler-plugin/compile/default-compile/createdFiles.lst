@@ -1,5 +1,7 @@
+com\first\pkg\processor\MainProcessor$1.class
 com\first\pkg\processor\MainProcessor$FinalVerifyObject.class
 com\first\pkg\processor\MainProcessor$VerifyPayload$1.class
+com\first\pkg\processor\MainProcessor$ExtractEventDataFn.class
 com\first\pkg\utility\Utility$2.class
 com\first\pkg\model\InvalidSchemaTable.class
 com\first\pkg\processor\MainProcessor$ExtractMessage.class
@@ -11,10 +13,12 @@ com\first\pkg\mapper\Mapper$MapMainInvalidFRecords$1.class
 com\first\pkg\mapper\Mapper$MapInvalidRecords$1.class
 com\first\pkg\mapper\Mappings.class
 com\first\pkg\utility\Utility.class
+com\first\pkg\processor\MainProcessor$ExtractCountryInfoFn.class
 com\first\pkg\model\Message.class
 com\first\pkg\processor\MainProcessor$ExtractMessage$1.class
 com\first\pkg\mapper\Mapper$MapMainRecords.class
 com\first\pkg\model\TableSchema.class
+com\first\pkg\options\MyOptions.class
 com\first\pkg\utility\Utility$1.class
 com\first\pkg\mapper\Mapper$MapInvalidRecords.class
 com\first\pkg\mapper\Mapper$MapMainRecords$1.class
