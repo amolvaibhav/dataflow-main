@@ -1,27 +1,33 @@
 package com.first.pkg;
 
+import com.first.pkg.cache.CacheProcessor;
+import com.first.pkg.cache.CacheProcessorOK;
 import com.first.pkg.mapper.Mapper;
 import com.first.pkg.mapper.Mappings;
 import com.first.pkg.model.EnrichedObject;
+import com.first.pkg.options.MyOptions;
 import com.first.pkg.processor.MainProcessor;
 import com.first.pkg.utility.Utility;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
 import org.apache.beam.sdk.options.*;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO;
 import org.apache.beam.sdk.transforms.*;
-import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.PCollectionList;
-import org.apache.beam.sdk.values.PCollectionTuple;
-import org.apache.beam.sdk.values.TupleTagList;
+import org.apache.beam.sdk.transforms.windowing.AfterProcessingTime;
+import org.apache.beam.sdk.transforms.windowing.GlobalWindows;
+import org.apache.beam.sdk.transforms.windowing.Repeatedly;
+import org.apache.beam.sdk.transforms.windowing.Window;
+import org.apache.beam.sdk.values.*;
+import org.joda.time.Duration;
+
+import java.util.Map;
 
 public class MainApplication {
 
     public static void main(String[] args){
 
-        String mainTable="infoworks-326916:mydataset.fact_main";
-        String invalidTable="infoworks-326916:mydataset.error_cache";
-        String invalidSchemaTable="infoworks-326916:mydataset.invalid_schema";
+
 
         String mainTableSchema="";
         String invalidTableSchema="";
@@ -34,13 +40,26 @@ public class MainApplication {
             e.printStackTrace();
         }
 
-        PipelineOptions options=PipelineOptionsFactory.fromArgs(args).withoutStrictParsing().create();
+        //PipelineOptions options=PipelineOptionsFactory.fromArgs(args).withoutStrictParsing().create();
+        MyOptions options=PipelineOptionsFactory.fromArgs(args).withoutStrictParsing().as(MyOptions.class);
+
+        String mainTable=options.getMainTable().get();
+        String invalidTable=options.getInvalidTable().get();
+        String invalidSchemaTable=options.getInvalidSchemaTable().get();
+        String fullSubName=options.getFullSubName().get();
+        String serviceURL=options.getserviceURL().get();
+
         Pipeline p=Pipeline.create(options);
         //p.apply("read1", Create.of("{\"ABC\":[{\"q\":192,\"v\":542,\"ts\":\"2021-02-20 02:09:23.263 UTC\"}]}"))
 
+        PCollectionView<Map<String,String>> masterData = p.apply("Generate Sequence", GenerateSequence.from(0).withRate(1, Duration.standardMinutes(30)))
+                .apply("Global Window", Window.<Long>into(new GlobalWindows()).triggering(Repeatedly.forever(AfterProcessingTime.pastFirstElementInPane()))
+                        .discardingFiredPanes())
+                .apply("Cache Processor", ParDo.of(new CacheProcessor(serviceURL)))
+                .apply("Constructing View", View.asSingleton());
 
 
-        PCollectionTuple recTuple=p.apply("Read from PubSub",PubsubIO.readStrings().fromSubscription("projects/infoworks-326916/subscriptions/real-time-data-sub"))
+        PCollectionTuple recTuple=p.apply("Read from PubSub",PubsubIO.readStrings().fromSubscription(fullSubName))
                         .apply("Verify Payload",ParDo.of(new MainProcessor.VerifyPayload()).withOutputTags(Utility.PASS, TupleTagList.of(Utility.FAIL)));
 
 
@@ -52,7 +71,7 @@ public class MainApplication {
                                 .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND));
 
         PCollectionList<EnrichedObject> feedback=validRecords.apply("Extract Message",ParDo.of(new MainProcessor.ExtractMessage()))
-                        .apply("Lookup Cache",ParDo.of(new MainProcessor.LookupCache()))
+                        .apply("Lookup Cache",ParDo.of(new MainProcessor.LookupCache(masterData)).withSideInputs(masterData))
                         .apply("Flatten List",Flatten.iterables())
                         .apply("Final Cache Verification",Partition.of(2, new MainProcessor.FinalVerifyObject()));
 

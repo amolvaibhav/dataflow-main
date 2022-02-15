@@ -9,6 +9,8 @@ import org.apache.beam.sdk.io.gcp.pubsub.PubsubMessage;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.Partition;
 import org.apache.beam.sdk.values.KV;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionView;
 import org.checkerframework.checker.initialization.qual.Initialized;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.UnknownKeyFor;
@@ -48,20 +50,26 @@ public class MainProcessor {
     }
     public static class LookupCache extends DoFn<Map<String, List<Message>>, List<EnrichedObject>>{
 
-        HashMap<String,String> cacheMap=new HashMap<>();
+        //HashMap<String,String> cacheMap=new HashMap<>();
+        PCollectionView<Map<String,String>> cacheMap;
 
-        @Setup
-        public void setup(){
-            this.cacheMap.put("ABC","{\"tid\":123,\"aid\":456,\"is_alarm\"=true}");
-            this.cacheMap.put("DEF","{\"tid\":1234,\"aid\":4567,\"is_alarm\"=true}");
-            this.cacheMap.put("JKL","{\"tid\":12345,\"aid\":45678,\"is_alarm\"=false}");
-            this.cacheMap.put("MNO","{\"tid\":123456,\"aid\":456789,\"is_alarm\"=true}");
-            this.cacheMap.put("PQR","{\"tid\":1234567,\"aid\":4567890,\"is_alarm\"=false}");
+        public LookupCache(PCollectionView<Map<String, String>> cacheMap) {
+            this.cacheMap = cacheMap;
         }
+
+        /*@Setup
+                public void setup(){
+                    this.cacheMap.put("ABC","{\"tid\":123,\"aid\":456,\"is_alarm\"=true}");
+                    this.cacheMap.put("DEF","{\"tid\":1234,\"aid\":4567,\"is_alarm\"=true}");
+                    this.cacheMap.put("JKL","{\"tid\":12345,\"aid\":45678,\"is_alarm\"=false}");
+                    this.cacheMap.put("MNO","{\"tid\":123456,\"aid\":456789,\"is_alarm\"=true}");
+                    this.cacheMap.put("PQR","{\"tid\":1234567,\"aid\":4567890,\"is_alarm\"=false}");
+                }*/
         @ProcessElement
         public void process(ProcessContext context){
             try {
                 List<EnrichedObject> finalList = new ArrayList<>();
+                Map<String,String> cacheMap=context.sideInput(this.cacheMap);
                 for (Map.Entry<String, List<Message>> entry : context.element().entrySet()) {
                     for (Message msg : entry.getValue()) {
                         String cacheResponse = cacheMap.get(entry.getKey());
