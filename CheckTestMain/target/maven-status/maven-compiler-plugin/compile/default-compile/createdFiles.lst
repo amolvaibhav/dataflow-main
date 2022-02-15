@@ -1,5 +1,6 @@
 com\first\pkg\cache\CacheProcessorOK.class
 com\first\pkg\model\CacheModel.class
+com\first\pkg\MainApplication$1.class
 com\first\pkg\processor\MainProcessor$FinalVerifyObject.class
 com\first\pkg\processor\MainProcessor$VerifyPayload$1.class
 com\first\pkg\utility\Utility$2.class

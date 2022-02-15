@@ -9,8 +9,12 @@ import com.first.pkg.options.MyOptions;
 import com.first.pkg.processor.MainProcessor;
 import com.first.pkg.utility.Utility;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.coders.BigEndianIntegerCoder;
+import org.apache.beam.sdk.coders.KvCoder;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.GenerateSequence;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
+import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.options.*;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO;
 import org.apache.beam.sdk.transforms.*;
@@ -21,9 +25,13 @@ import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.*;
 import org.joda.time.Duration;
 
+import java.sql.ResultSet;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class MainApplication {
+
+    private final static Logger log = Logger.getLogger(String.valueOf(MainApplication.class));
 
     public static void main(String[] args){
 
@@ -52,11 +60,26 @@ public class MainApplication {
         Pipeline p=Pipeline.create(options);
         //p.apply("read1", Create.of("{\"ABC\":[{\"q\":192,\"v\":542,\"ts\":\"2021-02-20 02:09:23.263 UTC\"}]}"))
 
-        PCollectionView<Map<String,String>> masterData = p.apply("Generate Sequence", GenerateSequence.from(0).withRate(1, Duration.standardMinutes(30)))
+        /*PCollectionView<Map<String,String>> masterData = p.apply("Generate Sequence", GenerateSequence.from(0).withRate(1, Duration.standardMinutes(30)))
                 .apply("Global Window", Window.<Long>into(new GlobalWindows()).triggering(Repeatedly.forever(AfterProcessingTime.pastFirstElementInPane()))
                         .discardingFiredPanes())
                 .apply("Cache Processor", ParDo.of(new CacheProcessor(serviceURL)))
-                .apply("Constructing View", View.asSingleton());
+                .apply("Constructing View", View.asSingleton());*/
+
+        PCollectionView<Map<String,String>> myCacheMap= p.apply(JdbcIO.<KV<String, String>>read()
+                .withDataSourceConfiguration(JdbcIO.DataSourceConfiguration.create(
+                                "com.mysql.cj.jdbc.Driver", "jdbc:mysql://34.131.120.173:3306/experiment")
+                        .withUsername("myuser")
+                        .withPassword("Classic@123"))
+                .withQuery("select tag,data from tagdata")
+                .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of()))
+                .withRowMapper(new JdbcIO.RowMapper<KV<String, String>>() {
+                    public KV<String, String> mapRow(ResultSet resultSet) throws Exception {
+                        log.info("ResultSet: "+resultSet.getString(1)+" "+resultSet.getString(2));
+                        return KV.of(resultSet.getString(1), resultSet.getString(2));
+                    }
+                })
+        ).apply("Construct View",View.asMap());
 
 
         PCollectionTuple recTuple=p.apply("Read from PubSub",PubsubIO.readStrings().fromSubscription(fullSubName))
@@ -71,7 +94,7 @@ public class MainApplication {
                                 .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND));
 
         PCollectionList<EnrichedObject> feedback=validRecords.apply("Extract Message",ParDo.of(new MainProcessor.ExtractMessage()))
-                        .apply("Lookup Cache",ParDo.of(new MainProcessor.LookupCache(masterData)).withSideInputs(masterData))
+                        .apply("Lookup Cache",ParDo.of(new MainProcessor.LookupCache(myCacheMap)).withSideInputs(myCacheMap))
                         .apply("Flatten List",Flatten.iterables())
                         .apply("Final Cache Verification",Partition.of(2, new MainProcessor.FinalVerifyObject()));
 
