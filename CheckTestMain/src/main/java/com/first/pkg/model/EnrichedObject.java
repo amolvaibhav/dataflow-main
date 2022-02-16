@@ -1,5 +1,6 @@
 package com.first.pkg.model;
 
+import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import org.apache.kafka.common.protocol.types.Field;
 
@@ -8,9 +9,15 @@ import java.io.Serializable;
 public class EnrichedObject implements Serializable {
 
     public String tagName;
+
+    @SerializedName(value = "q")
     public Integer quality;
+
+    @SerializedName(value = "v")
     public Double value;
+    @SerializedName(value = "ts")
     public String timestamp;
+
     public String reason;
 
     @SerializedName(value="tid")
@@ -23,6 +30,11 @@ public class EnrichedObject implements Serializable {
     public boolean isAlarm;
 
     public EnrichedObject() {
+    }
+
+    @Override
+    public String toString() {
+        return new Gson().toJson(this);
     }
 
     public EnrichedObject(String tagName, Integer quality, Double value, String timestamp) {

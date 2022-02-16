@@ -11,6 +11,8 @@ public class Utility {
 
     public static final TupleTag<String> PASS = new TupleTag<String>(){};
     public static final TupleTag<String> FAIL = new TupleTag<String>(){};
+    public static final TupleTag<String> MESSAGE = new TupleTag<String>(){};
+    public static final TupleTag<String> CACHE = new TupleTag<String>(){};
 
     public static String readJSONString(String fileName) throws IOException {
         String path="src/main/resources/"+fileName;
